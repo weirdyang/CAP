@@ -3,7 +3,6 @@
 
 using System.Threading;
 using System.Threading.Tasks;
-using Dapper;
 using DotNetCore.CAP.Persistence;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Logging;
@@ -26,12 +25,12 @@ namespace DotNetCore.CAP.SqlServer
 
         public virtual string GetPublishedTableName()
         {
-            return $"[{_options.Value.Schema}].[Published]";
+            return $"{_options.Value.Schema}.Published";
         }
 
         public virtual string GetReceivedTableName()
         {
-            return $"[{_options.Value.Schema}].[Received]";
+            return $"{_options.Value.Schema}.Received";
         }
 
         public async Task InitializeAsync(CancellationToken cancellationToken)
@@ -40,9 +39,9 @@ namespace DotNetCore.CAP.SqlServer
 
             var sql = CreateDbTablesScript(_options.Value.Schema);
             using (var connection = new SqlConnection(_options.Value.ConnectionString))
-            {
-                await connection.ExecuteAsync(sql);
-            }
+                connection.ExecuteNonQuery(sql);
+
+            await Task.CompletedTask;
 
             _logger.LogDebug("Ensuring all create database tables script are applied.");
         }
@@ -58,7 +57,7 @@ END;
 
 IF OBJECT_ID(N'{GetReceivedTableName()}',N'U') IS NULL
 BEGIN
-CREATE TABLE [{schema}].[Received](
+CREATE TABLE {GetReceivedTableName()}(
 	[Id] [bigint] NOT NULL,
     [Version] [nvarchar](20) NOT NULL,
 	[Name] [nvarchar](200) NOT NULL,
@@ -68,7 +67,7 @@ CREATE TABLE [{schema}].[Received](
 	[Added] [datetime2](7) NOT NULL,
     [ExpiresAt] [datetime2](7) NULL,
 	[StatusName] [nvarchar](50) NOT NULL,
- CONSTRAINT [PK_{schema}.Received] PRIMARY KEY CLUSTERED
+ CONSTRAINT [PK_{GetReceivedTableName()}] PRIMARY KEY CLUSTERED
 (
 	[Id] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
@@ -77,7 +76,7 @@ END;
 
 IF OBJECT_ID(N'{GetPublishedTableName()}',N'U') IS NULL
 BEGIN
-CREATE TABLE [{schema}].[Published](
+CREATE TABLE {GetPublishedTableName()}(
 	[Id] [bigint] NOT NULL,
     [Version] [nvarchar](20) NOT NULL,
 	[Name] [nvarchar](200) NOT NULL,
@@ -86,7 +85,7 @@ CREATE TABLE [{schema}].[Published](
 	[Added] [datetime2](7) NOT NULL,
     [ExpiresAt] [datetime2](7) NULL,
 	[StatusName] [nvarchar](50) NOT NULL,
- CONSTRAINT [PK_{schema}.Published] PRIMARY KEY CLUSTERED
+ CONSTRAINT [PK_{GetPublishedTableName()}] PRIMARY KEY CLUSTERED
 (
 	[Id] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]

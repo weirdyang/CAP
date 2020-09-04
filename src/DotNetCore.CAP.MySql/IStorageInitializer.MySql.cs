@@ -3,11 +3,10 @@
 
 using System.Threading;
 using System.Threading.Tasks;
-using Dapper;
 using DotNetCore.CAP.Persistence;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using MySql.Data.MySqlClient;
+using MySqlConnector;
 
 namespace DotNetCore.CAP.MySql
 {
@@ -43,9 +42,9 @@ namespace DotNetCore.CAP.MySql
 
             var sql = CreateDbTablesScript();
             await using (var connection = new MySqlConnection(_options.Value.ConnectionString))
-            {
-                await connection.ExecuteAsync(sql);
-            }
+                connection.ExecuteNonQuery(sql);
+
+            await Task.CompletedTask;
 
             _logger.LogDebug("Ensuring all create database tables script are applied.");
         }
